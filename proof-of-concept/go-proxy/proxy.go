@@ -1,39 +1,160 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
+	"flag"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strings"
 )
+
+var newLine = []byte{'\n'}
+
+var rewriteTypes = map[string]struct{}{
+	"text/turtle": {},
+	"text/html":   {},
+}
+
+type redactingTransport struct {
+	delegate http.RoundTripper
+}
+
+type writerWrapper struct {
+	writer  http.ResponseWriter
+	buffer  *bytes.Buffer
+	scanner *bufio.Scanner
+	extern  []byte
+	intern  []byte
+}
 
 // Right now, this is a really simple proxy that uses defaults
 // nearly everywhere, and does nothing other than blindly proxy a
 // request to a single server.
 func main() {
+	var (
+		bind, bindPath, proxyHost, proxyPath string
+		intern, extern                       []byte
+		mux                                  *http.ServeMux
+		provided                             bool
+		err                                  error
+	)
 
-	bind, provided := os.LookupEnv("BIND_ADDR")
+	// Start off by parsing args.  cmdline > env > defaults
+
+	bind, provided = os.LookupEnv("BIND_ADDR")
 	if !provided {
 		bind = ":8090"
 	}
-	log.Println("Binding to", bind)
+	flag.StringVar(&bind, "ba", bind, "Bind address [ip:port]; 0.0.0.0 to listen on all IPs")
 
-	proxyHost, provided := os.LookupEnv("PROXY_ADDR")
+	bindPath, provided = os.LookupEnv("BIND_PATH")
+	if !provided {
+		bindPath = "/"
+	}
+	flag.StringVar(&bindPath, "bp", bindPath, "Bind path; incoming requests to this path will be proxied")
+
+	proxyHost, provided = os.LookupEnv("PROXY_ADDR")
 	if !provided {
 		proxyHost = "127.0.0.1:8080"
 	}
-	log.Println("Proxying host", proxyHost)
+	flag.StringVar(&proxyHost, "ph", proxyHost, "Proxy host; requests will be proxied to this host")
 
-	proxyPath, provided := os.LookupEnv("PROXY_PATH")
+	proxyPath, provided = os.LookupEnv("PROXY_PATH")
 	if !provided {
 		proxyPath = "/"
 	}
-	log.Println("Proxy Path", proxyPath)
+	flag.StringVar(&proxyPath, "pp", proxyPath, "Proxy Path; requests will be proxied to this path")
 
+	flag.Parse()
+
+	log.Println("Listening to", bind, bindPath)
+	log.Println("Proxying to", proxyHost, proxyPath)
+
+	// create our proxy
 	proxy := httputil.NewSingleHostReverseProxy(&url.URL{Host: proxyHost, Path: proxyPath, Scheme: "http"})
+	proxy.Transport = &redactingTransport{delegate: http.DefaultTransport}
 
-	if err := http.ListenAndServe(bind, proxy); err != nil {
+	// re-write request URL
+	rewriteURL := func(to http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.URL.Path = strings.Replace(r.URL.Path, bindPath, proxyPath, 1)
+			to.ServeHTTP(w, r)
+		})
+	}
+
+	// These are the baseURIs we'll be substituting if we rewrite the body
+	intern = []byte(bind + proxyPath)
+	extern = []byte(bind + bindPath)
+
+	// rewrite the response body
+	rewriteBody := func(to http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			to.ServeHTTP(newWriterWrapper(w, intern, extern), r)
+		})
+	}
+
+	mux = http.NewServeMux()
+	mux.Handle(bindPath, rewriteBody(rewriteURL(proxy)))
+
+	if err = http.ListenAndServe(bind, mux); err != nil {
 		log.Panic("Could not start proxy", err)
 	}
+}
+
+func newWriterWrapper(w http.ResponseWriter, intern []byte, extern []byte) *writerWrapper {
+	buf := new(bytes.Buffer)
+	return &writerWrapper{writer: w, buffer: buf, scanner: bufio.NewScanner(buf), intern: intern, extern: extern}
+}
+
+func (w *writerWrapper) Header() http.Header {
+	return w.writer.Header()
+}
+
+func (w *writerWrapper) WriteHeader(code int) {
+	w.writer.WriteHeader(code)
+}
+
+func (t *redactingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := t.delegate.RoundTrip(req)
+	resp.Header.Del("Content-Length")
+	return resp, err
+}
+
+// Capture the content written to the response; for each line
+// perform a substitution.
+func (w *writerWrapper) Write(content []byte) (int, error) {
+
+	if _, ok := rewriteTypes[w.Header().Get("Content-Type")]; ok {
+
+		_, err := w.buffer.Write(content)
+		if err != nil {
+			log.Panic("Buffer write failed!", err)
+		}
+
+		var written int
+
+		for w.scanner.Scan() {
+			i, err := w.writer.Write(bytes.Replace(w.scanner.Bytes(), w.intern, w.extern, -1))
+			if err != nil {
+				log.Panic("Write to http writer failed!", err)
+			}
+
+			written += i
+			i, err = w.writer.Write(newLine)
+			written += i
+		}
+
+		if w.scanner.Err() != nil {
+			log.Panic("Error scanning text", w.scanner.Err())
+		}
+
+		return written, err
+	}
+
+	return w.writer.Write(content)
+
 }
