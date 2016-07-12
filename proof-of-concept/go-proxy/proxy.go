@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"fmt"
 )
 
 var newLine = []byte{'\n'}
@@ -21,7 +22,10 @@ var rewriteTypes = map[string]struct{}{
 
 type redactingTransport struct {
 	delegate http.RoundTripper
+	linkHeader string
+	contextUri string
 }
+
 
 type writerWrapper struct {
 	writer  http.ResponseWriter
@@ -41,6 +45,7 @@ func main() {
 		mux                                               *http.ServeMux
 		provided, rewriteHostHeader                       bool
 		err                                               error
+		jsonLdContext                                     string
 	)
 
 	// Start off by parsing args.  cmdline > env > defaults
@@ -78,6 +83,13 @@ func main() {
 	flag.BoolVar(&rewriteHostHeader, "r", false,
 		"Re-write Host header")
 
+	jsonLdContext, provided = os.LookupEnv("PROXY_LDCONTEXT")
+	if !provided {
+		jsonLdContext = "";
+	}
+	flag.StringVar(&jsonLdContext, "ctx", jsonLdContext,
+		"JSON-LD context location; added as Link header on application/json responses")
+
 	flag.Parse()
 
 	log.Println("Listening to", bind, bindPath)
@@ -93,7 +105,12 @@ func main() {
 			req.Host = proxyHost
 		}
 	}
-	proxy.Transport = &redactingTransport{delegate: http.DefaultTransport}
+
+	proxy.Transport = &redactingTransport{
+		delegate: http.DefaultTransport,
+		contextUri: jsonLdContext,
+		linkHeader: "<%s>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\"",
+	}
 
 	// re-write request URL
 	rewriteURL := func(to http.Handler) http.Handler {
@@ -138,6 +155,11 @@ func (w *writerWrapper) WriteHeader(code int) {
 func (t *redactingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := t.delegate.RoundTrip(req)
 	resp.Header.Del("Content-Length")
+
+	if (t.contextUri != "" && resp.Header.Get("Content-Type") == "application/json" && strings.ContainsAny("share-api",req.Host)) {
+		resp.Header.Add("Link", fmt.Sprintf(t.linkHeader, t.contextUri))
+	}
+
 	return resp, err
 }
 
