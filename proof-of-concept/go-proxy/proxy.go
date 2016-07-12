@@ -100,6 +100,7 @@ func main() {
 
 	proxy.Director = func(req *http.Request) {
 		// request path has already been re-written to the proxied version of the path
+		log.Printf("Director received request: %v", req)
 		req.URL = &url.URL{Host: proxyHost, Path: req.URL.Path, Scheme: proxyScheme}
 		if rewriteHostHeader {
 			req.Host = proxyHost
@@ -112,10 +113,12 @@ func main() {
 		linkHeader: "<%s>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\"",
 	}
 
-	// re-write request URL
+	// re-write request path
 	rewriteURL := func(to http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("Re-writing URL path: '%s' in '%s' with '%s'", bindPath, r.URL.Path, proxyPath)
 			r.URL.Path = strings.Replace(r.URL.Path, bindPath, proxyPath, 1)
+			log.Printf("Re-written URL path: '%s'", r.URL.Path)
 			to.ServeHTTP(w, r)
 		})
 	}
@@ -153,13 +156,26 @@ func (w *writerWrapper) WriteHeader(code int) {
 }
 
 func (t *redactingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	log.Printf("Request url: %s", req.URL)
+	log.Printf("Request: %v\n", req)
+
 	resp, err := t.delegate.RoundTrip(req)
+	if err != nil {
+		log.Panicf("Response error: %s", err)
+	}
+	if resp == nil {
+		log.Panic("Response is nil")
+	} else if resp.StatusCode > 299 {
+		log.Printf("Unexpected response: %d, %s\n", resp.StatusCode, resp.Status)
+	} else {
+		log.Printf("Response: %v\n", resp)
+	}
 	resp.Header.Del("Content-Length")
 
 	if (t.contextUri != "" && resp.Header.Get("Content-Type") == "application/json" && strings.ContainsAny("share-api",req.Host)) {
 		resp.Header.Add("Link", fmt.Sprintf(t.linkHeader, t.contextUri))
 	}
-
+	
 	return resp, err
 }
 
