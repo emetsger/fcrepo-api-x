@@ -36,11 +36,11 @@ type writerWrapper struct {
 // request to a single server.
 func main() {
 	var (
-		bind, bindPath, proxyHost, proxyPath string
-		intern, extern                       []byte
-		mux                                  *http.ServeMux
-		provided                             bool
-		err                                  error
+		bind, bindPath, proxyHost, proxyPath, proxyScheme string
+		intern, extern                       		  []byte
+		mux                                               *http.ServeMux
+		provided                                          bool
+		err                                               error
 	)
 
 	// Start off by parsing args.  cmdline > env > defaults
@@ -69,13 +69,19 @@ func main() {
 	}
 	flag.StringVar(&proxyPath, "pp", proxyPath, "Proxy Path; requests will be proxied to this path")
 
+	proxyScheme, provided = os.LookupEnv("PROXY_SCHEME")
+	if !provided {
+		proxyScheme = "http"
+	}
+	flag.StringVar(&proxyScheme, "ps", proxyScheme, "Proxy scheme; requests will be proxied using this scheme")
+
 	flag.Parse()
 
 	log.Println("Listening to", bind, bindPath)
 	log.Println("Proxying to", proxyHost, proxyPath)
 
 	// create our proxy
-	proxy := httputil.NewSingleHostReverseProxy(&url.URL{Host: proxyHost, Path: proxyPath, Scheme: "http"})
+	proxy := httputil.NewSingleHostReverseProxy(&url.URL{Host: proxyHost, Path: proxyPath, Scheme: proxyScheme})
 	proxy.Transport = &redactingTransport{delegate: http.DefaultTransport}
 
 	// re-write request URL
