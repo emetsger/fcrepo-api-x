@@ -39,7 +39,7 @@ func main() {
 		bind, bindPath, proxyHost, proxyPath, proxyScheme string
 		intern, extern                       		  []byte
 		mux                                               *http.ServeMux
-		provided                                          bool
+		provided, rewriteHostHeader                       bool
 		err                                               error
 	)
 
@@ -75,6 +75,9 @@ func main() {
 	}
 	flag.StringVar(&proxyScheme, "ps", proxyScheme, "Proxy scheme; requests will be proxied using this scheme")
 
+	flag.BoolVar(&rewriteHostHeader, "r", false,
+		"Re-write Host header")
+
 	flag.Parse()
 
 	log.Println("Listening to", bind, bindPath)
@@ -82,6 +85,14 @@ func main() {
 
 	// create our proxy
 	proxy := httputil.NewSingleHostReverseProxy(&url.URL{Host: proxyHost, Path: proxyPath, Scheme: proxyScheme})
+
+	proxy.Director = func(req *http.Request) {
+		// request path has already been re-written to the proxied version of the path
+		req.URL = &url.URL{Host: proxyHost, Path: req.URL.Path, Scheme: proxyScheme}
+		if rewriteHostHeader {
+			req.Host = proxyHost
+		}
+	}
 	proxy.Transport = &redactingTransport{delegate: http.DefaultTransport}
 
 	// re-write request URL
