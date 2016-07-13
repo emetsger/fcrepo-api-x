@@ -168,14 +168,15 @@ func (t *redactingTransport) RoundTrip(req *http.Request) (*http.Response, error
 	} else if resp.StatusCode > 299 {
 		log.Printf("Unexpected response: %d, %s\n", resp.StatusCode, resp.Status)
 	} else {
+		if (t.contextUri != "") {
+			resp.Header.Add("Link", fmt.Sprintf(t.linkHeader, t.contextUri))
+		}
+		resp.Header.Del("Content-Length")
+		resp.Header.Add("Access-Control-Expose-Headers", "Link")
+	
 		log.Printf("Response: %v\n", resp)
 	}
-	resp.Header.Del("Content-Length")
 
-	if (t.contextUri != "" && resp.Header.Get("Content-Type") == "application/json" && strings.ContainsAny("share-api",req.Host)) {
-		resp.Header.Add("Link", fmt.Sprintf(t.linkHeader, t.contextUri))
-	}
-	
 	return resp, err
 }
 
