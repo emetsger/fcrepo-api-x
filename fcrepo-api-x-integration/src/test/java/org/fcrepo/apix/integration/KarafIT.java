@@ -45,6 +45,7 @@ import org.apache.http.HttpStatus;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.ConfigurationManager;
 import org.ops4j.pax.exam.Option;
+import org.ops4j.pax.exam.karaf.options.KarafDistributionOption;
 import org.ops4j.pax.exam.karaf.options.LogLevelOption.LogLevel;
 import org.ops4j.pax.exam.options.MavenArtifactUrlReference;
 import org.ops4j.pax.exam.options.MavenUrlReference;
@@ -114,9 +115,9 @@ public interface KarafIT {
             karafDistributionConfiguration().frameworkUrl(karafUrl)
                     .unpackDirectory(new File("target", "exam")).useDeployFolder(false),
             // KarafDistributionOption.configureConsole().ignoreLocalConsole(),
-            logLevel(LogLevel.WARN),
+            logLevel(LogLevel.INFO),
 
-            // KarafDistributionOption.debugConfiguration("5005", true),
+             KarafDistributionOption.debugConfiguration("5005", false),
 
             keepRuntimeFolder(),
 
