@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<features xmlns="http://karaf.apache.org/xmlns/features/v1.3.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://karaf.apache.org/xmlns/features/v1.3.0 http://karaf.apache.org/xmlns/features/v1.3.0"
+          name="fcrepo-api-x-registry">
+    <feature name="fcrepo-api-x-registry" description="fcrepo-api-x-registry" version="${project.version}">
+        <configfile finalname="/etc/org.fcrepo.apix.registry.http.cfg">mvn:org.fcrepo.apix/fcrepo-api-x-registry/${project.version}/cfg/configuration</configfile>
+    </feature>
+</features>

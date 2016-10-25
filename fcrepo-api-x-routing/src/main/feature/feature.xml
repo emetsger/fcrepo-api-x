@@ -5,6 +5,7 @@
   <feature name="fcrepo-api-x-routing" description="fcrepo-api-x-routing"
     version="${project.version}">
     <feature version="${camel.version}">camel-blueprint</feature>
-    <feature version="${camel.version}">camel-jetty</feature>  
+    <feature version="${camel.version}">camel-jetty</feature>
+    <configfile finalname="/etc/org.fcrepo.apix.routing.cfg">mvn:org.fcrepo.apix/fcrepo-api-x-routing/${project.version}/cfg/configuration</configfile>
   </feature>
 </features>

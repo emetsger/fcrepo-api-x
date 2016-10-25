@@ -145,10 +145,10 @@ public interface KarafIT {
             editConfigurationFilePut("/etc/system.properties", "registry.ontology.container", container +
                     "/ontologies"),
 
-            deployFile("cfg/org.fcrepo.apix.jena.cfg"),
-            deployFile("cfg/org.fcrepo.apix.registry.http.cfg"),
-            deployFile("cfg/org.fcrepo.apix.routing.cfg"),
-            deployFile("cfg/org.fcrepo.apix.listener.cfg")
+//            deployFile("cfg/org.fcrepo.apix.jena.cfg"),
+//            deployFile("cfg/org.fcrepo.apix.registry.http.cfg"),
+//            deployFile("cfg/org.fcrepo.apix.routing.cfg"),
+//            deployFile("cfg/org.fcrepo.apix.listener.cfg")
         };
 
         options.addAll(Arrays.asList(defaultOptions));
