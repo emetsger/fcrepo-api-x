@@ -99,8 +99,17 @@ public class RoutingImpl extends RouteBuilder {
     }
 
     /**
-     * Fedora's proxyURI
-     * @param fcrepoProxyURI
+     * Target URI that will be used when API-X passes an intercepted request back to the Fedora repository.  Distinct
+     * from {@link #fcrepoBaseURI} in that it is broader, allowing static resources to be proxied (e.g. the Fedora HTML
+     * UI).
+     * <p>
+     * Example {@code fcrepoProxyURI}: http://example.repo.org/fcrepo/
+     * </p>
+     * <p>
+     * Example {@code fcrepoBaseURI}: http://example.repo.org/fcrepo/rest
+     * </p>
+     *
+     * @param fcrepoProxyURI the Fedora proxy URI
      */
     public void setFcrepoProxyURI(final URI fcrepoProxyURI) {
         this.fcrepoProxyURI = fcrepoProxyURI;
@@ -313,7 +322,7 @@ public class RoutingImpl extends RouteBuilder {
         }
     }
 
-    private static String stripHttpScheme(URI uri) {
+    private static String stripHttpScheme(final URI uri) {
         if (uri.getScheme().startsWith("http")) {
             return uri.toString().substring("http://".length());
         }
