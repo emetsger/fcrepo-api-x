@@ -160,7 +160,7 @@ func (t *redactingTransport) RoundTrip(req *http.Request) (*http.Response, error
 	log.Printf("Request: %v\n", req)
 
 	req.Header.Del("Accept")
-	req.Header.Add("Accept", "application/vnd+api.json")
+	req.Header.Add("Accept", "application/vnd.api+json")
 
 	resp, err := t.delegate.RoundTrip(req)
 	if err != nil {
