@@ -15,46 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.fcrepo.apix.integration;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-
+import org.apache.commons.io.IOUtils;
 import org.fcrepo.apix.model.Extension;
 import org.fcrepo.apix.model.components.ExtensionBinding;
 import org.fcrepo.apix.model.components.ExtensionRegistry;
 import org.fcrepo.apix.model.components.OntologyRegistry;
 import org.fcrepo.apix.model.components.OntologyService;
 import org.fcrepo.apix.model.components.Registry;
-
-import org.apache.commons.io.IOUtils;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.util.Filter;
-import org.osgi.framework.BundleContext;
+
+import javax.inject.Inject;
+import java.net.URI;
+import java.util.Collection;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Performs Loads ontologies, extensions, and instance objects in repo to verify extension binding.
- *
  * @author apb@jhu.edu
+ * @author Elliot Metsger (emetsger@jhu.edu)
  */
-@RunWith(PaxExam.class)
-public class RepositoryExtensionBindingIT implements KarafIT {
+public abstract class RepositoryExtensionBindingBaseIT implements BaseIT {
 
     private static final URI ORE_ONTOLOGY_IRI = URI.create("http://www.openarchives.org/ore/terms/");
 
@@ -64,9 +52,6 @@ public class RepositoryExtensionBindingIT implements KarafIT {
 
     @Rule
     public TestName name = new TestName();
-
-    @Inject
-    BundleContext cxt;
 
     @Inject
     @Filter("(org.fcrepo.apix.registry.role=default)")
@@ -85,12 +70,6 @@ public class RepositoryExtensionBindingIT implements KarafIT {
     ExtensionBinding extensionBinding;
 
     @Override
-    public List<Option> additionalKarafConfig() {
-
-        return Arrays.asList();
-    }
-
-    @Override
     public String testClassName() {
         return this.getClass().getSimpleName();
     }
@@ -98,11 +77,6 @@ public class RepositoryExtensionBindingIT implements KarafIT {
     @Override
     public String testMethodName() {
         return name.getMethodName();
-    }
-
-    @BeforeClass
-    public static void init() throws Exception {
-        KarafIT.createContainers();
     }
 
     @Before

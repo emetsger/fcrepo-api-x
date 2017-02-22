@@ -15,8 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.fcrepo.apix.integration;
+
+import org.apache.camel.CamelContext;
+import org.apache.camel.Message;
+import org.apache.camel.Processor;
+import org.apache.camel.RoutesBuilder;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.impl.DefaultMessage;
+import org.apache.commons.io.IOUtils;
+import org.fcrepo.apix.model.Extension;
+import org.fcrepo.apix.model.WebResource;
+import org.fcrepo.apix.model.components.ExtensionRegistry;
+import org.fcrepo.apix.model.components.ServiceRegistry;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.rules.TestName;
+import org.ops4j.pax.exam.util.Filter;
+
+import javax.inject.Inject;
+import java.net.URI;
+import java.util.UUID;
 
 import static org.fcrepo.apix.jena.Util.rdfResource;
 import static org.fcrepo.apix.model.Ontologies.Apix.CLASS_EXTENSION;
@@ -27,43 +46,12 @@ import static org.fcrepo.apix.model.Ontologies.Apix.PROP_EXPOSES_SERVICE_AT;
 import static org.fcrepo.apix.model.Ontologies.Service.CLASS_SERVICE_INSTANCE;
 import static org.fcrepo.apix.model.Ontologies.Service.PROP_CANONICAL;
 import static org.fcrepo.apix.model.Ontologies.Service.PROP_HAS_ENDPOINT;
-import static org.ops4j.pax.exam.CoreOptions.maven;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
-
-import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
-import org.fcrepo.apix.model.Extension;
-import org.fcrepo.apix.model.Extension.Scope;
-import org.fcrepo.apix.model.WebResource;
-import org.fcrepo.apix.model.components.ExtensionRegistry;
-import org.fcrepo.apix.model.components.ServiceRegistry;
-import org.fcrepo.apix.model.components.Updateable;
-
-import org.apache.camel.CamelContext;
-import org.apache.camel.Message;
-import org.apache.camel.Processor;
-import org.apache.camel.RoutesBuilder;
-import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.impl.DefaultMessage;
-import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.rules.TestName;
-import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.options.MavenArtifactUrlReference;
-import org.ops4j.pax.exam.util.Filter;
-import org.osgi.framework.BundleContext;
 
 /**
- * Test base class which exposes an HTTP service; implemented by camel-jetty
- *
  * @author apb@jhu.edu
+ * @author Elliot Metsger (emetsger@jhu.edu)
  */
-public abstract class ServiceBasedTest implements KarafIT {
+public abstract class AbstractServiceTest implements BaseIT {
 
     static final protected String serviceEndpoint = "http://127.0.0.1:" + System.getProperty(
             "services.dynamic.test.port") +
@@ -81,22 +69,15 @@ public abstract class ServiceBasedTest implements KarafIT {
     @Inject
     private ServiceRegistry serviceRegistry;
 
-    @Inject
-    BundleContext bundleContext;
-
     protected final Message responseFromService = new DefaultMessage();
 
     protected final Message requestToService = new DefaultMessage();
 
     private Processor processFromTest;
 
-    @Override
-    public List<Option> additionalKarafConfig() {
-        final MavenArtifactUrlReference testBundle = maven()
-                .groupId("org.fcrepo.apix")
-                .artifactId("fcrepo-api-x-test")
-                .versionAsInProject();
-        return Arrays.asList(mavenBundle(testBundle));
+    @BeforeClass
+    public static void init() throws Exception {
+        BaseIT.createContainers();
     }
 
     @Before
@@ -104,6 +85,10 @@ public abstract class ServiceBasedTest implements KarafIT {
         if (cxt.getRoute(SERVICE_ROUTE_ID) == null) {
             cxt.addRoutes(createRouteBuilder());
         }
+    }
+
+    protected void update() throws Exception {
+        // no-op
     }
 
     protected void onServiceRequest(final Processor process) {
@@ -134,13 +119,6 @@ public abstract class ServiceBasedTest implements KarafIT {
         return extensionURI;
     }
 
-    protected void update() throws Exception {
-
-        bundleContext.getServiceReferences(Updateable.class, null).stream()
-                .map(bundleContext::getService)
-                .forEach(Updateable::update);
-    }
-
     private RoutesBuilder createRouteBuilder() throws Exception {
 
         return new RouteBuilder() {
@@ -149,17 +127,17 @@ public abstract class ServiceBasedTest implements KarafIT {
             public void configure() throws Exception {
                 from("jetty:" + serviceEndpoint +
                         "?matchOnUriPrefix=true")
-                                .routeId(SERVICE_ROUTE_ID)
-                                .process(ex -> {
-                                    requestToService.copyFrom(ex.getIn());
+                        .routeId(SERVICE_ROUTE_ID)
+                        .process(ex -> {
+                            requestToService.copyFrom(ex.getIn());
 
-                                    if (processFromTest != null) {
-                                        processFromTest.process(ex);
-                                    } else {
-                                        ex.getOut().copyFrom(responseFromService);
-                                    }
+                            if (processFromTest != null) {
+                                processFromTest.process(ex);
+                            } else {
+                                ex.getOut().copyFrom(responseFromService);
+                            }
 
-                                });
+                        });
             }
         };
     }
@@ -174,7 +152,7 @@ public abstract class ServiceBasedTest implements KarafIT {
 
         private final String name;
 
-        private Scope scope;
+        private Extension.Scope scope;
 
         private String bindingClass;
 
@@ -183,7 +161,7 @@ public abstract class ServiceBasedTest implements KarafIT {
             differentiator = name.getMethodName() + "-" + UUID.randomUUID().toString();
         }
 
-        ExtensionBuilder withScope(final Scope scope) {
+        ExtensionBuilder withScope(final Extension.Scope scope) {
             this.scope = scope;
             return this;
         }
@@ -236,10 +214,10 @@ public abstract class ServiceBasedTest implements KarafIT {
             extensionBody.append(String.format("<> a <%s> .\n", CLASS_EXTENSION));
             extensionBody.append(String.format("<> <%s> <%s> .\n", PROP_BINDS_TO, bindingClass));
 
-            if (Scope.RESOURCE.equals(scope)) {
+            if (Extension.Scope.RESOURCE.equals(scope)) {
                 extensionBody.append(String.format("<> <%s> \"%s\" .\n", PROP_EXPOSES_SERVICE_AT, endpointSpec));
                 extensionBody.append(String.format("<> <%s> <%s> .\n", PROP_EXPOSES_SERVICE, serviceURI));
-            } else if (Scope.REPOSITORY.equals(scope)) {
+            } else if (Extension.Scope.REPOSITORY.equals(scope)) {
                 extensionBody.append(String.format("<> <%s> \"/%s\" .\n", PROP_EXPOSES_SERVICE_AT, endpointSpec));
                 extensionBody.append(String.format("<> <%s> <%s> .\n", PROP_EXPOSES_SERVICE, serviceURI));
             } else {

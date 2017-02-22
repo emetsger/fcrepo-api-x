@@ -15,71 +15,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.fcrepo.apix.integration;
 
-import static org.fcrepo.apix.integration.KarafIT.attempt;
-import static org.fcrepo.apix.jena.Util.ltriple;
-import static org.fcrepo.apix.jena.Util.parse;
-import static org.fcrepo.apix.jena.Util.query;
-import static org.fcrepo.apix.jena.Util.triple;
-import static org.fcrepo.apix.model.Ontologies.RDF_TYPE;
-import static org.fcrepo.apix.model.Ontologies.Apix.CLASS_EXTENSION;
-import static org.fcrepo.apix.model.Ontologies.Apix.PROP_EXPOSES_SERVICE;
-import static org.fcrepo.apix.model.Ontologies.Apix.PROP_EXPOSES_SERVICE_AT;
-import static org.fcrepo.apix.model.Ontologies.Service.CLASS_SERVICE_INSTANCE;
-import static org.fcrepo.apix.model.Ontologies.Service.PROP_HAS_ENDPOINT;
-import static org.fcrepo.apix.model.Ontologies.Service.PROP_IS_SERVICE_INSTANCE_OF;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.ops4j.pax.exam.CoreOptions.maven;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
-import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
-
-import java.io.ByteArrayInputStream;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-
+import org.apache.camel.Exchange;
+import org.apache.commons.io.IOUtils;
+import org.apache.jena.rdf.model.Model;
 import org.fcrepo.apix.model.Service;
 import org.fcrepo.apix.model.WebResource;
 import org.fcrepo.apix.model.components.Registry;
 import org.fcrepo.apix.model.components.RoutingFactory;
 import org.fcrepo.apix.model.components.ServiceRegistry;
 import org.fcrepo.client.FcrepoResponse;
-
-import org.apache.camel.Exchange;
-import org.apache.commons.io.IOUtils;
-import org.apache.jena.rdf.model.Model;
-import org.jsoup.Connection.Method;
-import org.jsoup.Connection.Response;
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.FormElement;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.junit.PaxExam;
-import org.ops4j.pax.exam.options.MavenArtifactUrlReference;
-import org.ops4j.pax.exam.options.MavenUrlReference;
 import org.ops4j.pax.exam.util.Filter;
+
+import javax.inject.Inject;
+import java.io.ByteArrayInputStream;
+import java.net.URI;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import static org.fcrepo.apix.integration.BaseIT.attempt;
+import static org.fcrepo.apix.jena.Util.ltriple;
+import static org.fcrepo.apix.jena.Util.parse;
+import static org.fcrepo.apix.jena.Util.query;
+import static org.fcrepo.apix.jena.Util.triple;
+import static org.fcrepo.apix.model.Ontologies.Apix.CLASS_EXTENSION;
+import static org.fcrepo.apix.model.Ontologies.Apix.PROP_EXPOSES_SERVICE;
+import static org.fcrepo.apix.model.Ontologies.Apix.PROP_EXPOSES_SERVICE_AT;
+import static org.fcrepo.apix.model.Ontologies.RDF_TYPE;
+import static org.fcrepo.apix.model.Ontologies.Service.CLASS_SERVICE_INSTANCE;
+import static org.fcrepo.apix.model.Ontologies.Service.PROP_HAS_ENDPOINT;
+import static org.fcrepo.apix.model.Ontologies.Service.PROP_IS_SERVICE_INSTANCE_OF;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author apb@jhu.edu
+ * @author Elliot Metsger (emetsger@jhu.edu)
  */
-@RunWith(PaxExam.class)
-public class LoaderIT extends ServiceBasedTest {
-
+public abstract class LoaderBaseIT extends AbstractServiceTest {
     static final String LOADER_URI = "http://127.0.0.1:" + System.getProperty(
             "loader.dynamic.test.port") + "/load";
 
@@ -107,7 +90,7 @@ public class LoaderIT extends ServiceBasedTest {
 
     @Override
     public String testClassName() {
-        return LoaderIT.class.getSimpleName();
+        return "LoaderIT";
     }
 
     @Override
@@ -117,30 +100,6 @@ public class LoaderIT extends ServiceBasedTest {
 
     @Inject
     RoutingFactory routing;
-
-    @BeforeClass
-    public static void init() throws Exception {
-        KarafIT.createContainers();
-    }
-
-    @Override
-    public List<Option> additionalKarafConfig() {
-        final List<Option> options = new ArrayList<>(super.additionalKarafConfig());
-
-        // This test dependency is not in any features files, so we have to add it manually.
-        final MavenArtifactUrlReference jsoup = maven().groupId("org.jsoup")
-                .artifactId("jsoup")
-                .versionAsInProject();
-
-        final MavenUrlReference apixRepo =
-                maven().groupId("org.fcrepo.apix")
-                        .artifactId("fcrepo-api-x-karaf").versionAsInProject()
-                        .classifier("features").type("xml");
-
-        options.addAll(Arrays.asList(mavenBundle(jsoup), features(apixRepo, "fcrepo-api-x-loader")));
-
-        return options;
-    }
 
     @Before
     public void setUp() {
@@ -166,12 +125,12 @@ public class LoaderIT extends ServiceBasedTest {
                 "utf8"));
         serviceResponse.set(SERVICE_RESPONSE_BODY);
 
-        final Document html = attempt(60, () -> Jsoup.connect(LOADER_URI).method(Method.GET).timeout(1000)
+        final Document html = attempt(60, () -> Jsoup.connect(LOADER_URI).method(Connection.Method.GET).timeout(1000)
                 .execute().parse());
         final FormElement form = ((FormElement) html.getElementById("uriForm"));
         form.getElementById("uri").val(serviceEndpoint);
 
-        final Response response = form.submit().ignoreHttpErrors(true).followRedirects(false).execute();
+        final Connection.Response response = form.submit().ignoreHttpErrors(true).followRedirects(false).execute();
         update();
 
         assertEquals("OPTIONS", requestToService.getHeader(Exchange.HTTP_METHOD));
@@ -259,9 +218,12 @@ public class LoaderIT extends ServiceBasedTest {
         final URI discoveryDoc = client.options(deposited).perform().getLinkHeaders("service").get(0);
 
         // Invoke the "minimal" service, and verify that the response body is as expected
-        final String body = attempt(10, () -> IOUtils.toString(
-                client.get(serviceEndpoints(discoveryDoc).get(SERVICE_ONT)).perform()
-                        .getBody(), "utf8"));
+        final String body = attempt(10, () -> {
+            final URI url = serviceEndpoints(discoveryDoc).get(SERVICE_ONT);
+            return IOUtils.toString(
+                    client.get(url).perform()
+                            .getBody(), "utf8");
+        });
         assertEquals(SERVICE_RESPONSE_BODY, body);
 
         // Now check that we can update it

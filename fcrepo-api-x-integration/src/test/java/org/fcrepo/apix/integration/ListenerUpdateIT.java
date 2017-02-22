@@ -18,7 +18,7 @@
 
 package org.fcrepo.apix.integration;
 
-import static org.fcrepo.apix.integration.KarafIT.attempt;
+import static org.fcrepo.apix.integration.BaseIT.attempt;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.ops4j.pax.exam.CoreOptions.maven;
@@ -77,11 +77,6 @@ public class ListenerUpdateIT implements KarafIT {
         return name.getMethodName();
     }
 
-    @BeforeClass
-    public static void init() throws Exception {
-        KarafIT.createContainers();
-    }
-
     @Override
     public List<Option> additionalKarafConfig() {
         final MavenUrlReference apixRepo =
@@ -92,6 +87,11 @@ public class ListenerUpdateIT implements KarafIT {
         return Arrays.asList(
                 features(apixRepo, "fcrepo-api-x-listener"),
                 deployFile("cfg/org.fcrepo.camel.service.activemq.cfg"));
+    }
+
+    @BeforeClass
+    public static void createContainers() throws Exception {
+        BaseIT.createContainers();
     }
 
     // Verify that we can add an Updateable service,
@@ -114,7 +114,7 @@ public class ListenerUpdateIT implements KarafIT {
             }
         }, new Hashtable<>());
 
-        attempt(3, () -> {
+        attempt(10, () -> {
 
             final URI OBJECT = client.post(objectContainer).perform().getLocation();
 

@@ -18,7 +18,6 @@
 
 package org.fcrepo.apix.integration;
 
-import static org.apache.commons.io.FilenameUtils.getBaseName;
 import static org.ops4j.pax.exam.CoreOptions.maven;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.editConfigurationFilePut;
@@ -29,29 +28,16 @@ import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.logLevel;
 import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.replaceConfigurationFile;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 
-import org.fcrepo.apix.model.WebResource;
-import org.fcrepo.client.FcrepoClient;
-import org.fcrepo.client.FcrepoOperationFailedException;
-import org.fcrepo.client.FcrepoResponse;
-
-import org.apache.commons.io.FilenameUtils;
-import org.apache.http.HttpStatus;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.ConfigurationManager;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.karaf.options.LogLevelOption.LogLevel;
 import org.ops4j.pax.exam.options.MavenArtifactUrlReference;
 import org.ops4j.pax.exam.options.MavenUrlReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Base Karaf + Pax Exam boilerplace.
@@ -61,29 +47,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author apb@jhu.edu
  */
-public interface KarafIT {
-
-    Logger _log = LoggerFactory.getLogger(KarafIT.class);
-
-    String apixBaseURI = String.format("http://localhost:%s", System.getProperty(
-            "apix.dynamic.test.port", "32080"));
-
-    String fcrepoBaseURI = String.format("http://localhost:%s/%s/rest/", System.getProperty(
-            "fcrepo.dynamic.test.port", "8080"), System.getProperty("fcrepo.cxtPath", "fcrepo"));
-
-    File testResources = new File(System.getProperty("project.basedir"), "src/test/resources");
-
-    FcrepoClient client = FcrepoClient.client().throwExceptionOnFailure().build();
-
-    URI testContainer = URI.create(System.getProperty("test.container", ""));
-
-    URI objectContainer = URI.create(testContainer + "/objects");
-
-    URI extensionContainer = URI.create(System.getProperty("registry.extension.container", ""));
-
-    URI serviceContainer = URI.create(System.getProperty("registry.service.container", ""));
-
-    URI ontologyContainer = URI.create(System.getProperty("registry.ontology.container", ""));
+public interface KarafIT extends BaseIT {
 
     // What really sucks about pax exam is that this is called *ONLY ONCE, EVER*,
     // yet Karaf is entirely re-deployed from scratch *EVERY TEST*. There is no straightforward
@@ -91,7 +55,7 @@ public interface KarafIT {
     // Instead, the containers persist (and are shared) between tests. Had this been invoked every time
     // Karaf is configured and deployed, life would be much, much easier.
     @Configuration
-    public default Option[] config() {
+    default Option[] config() {
         final MavenArtifactUrlReference karafUrl = maven().groupId("org.apache.karaf")
                 .artifactId("apache-karaf").version(karafVersion()).type("zip");
 
@@ -175,21 +139,17 @@ public interface KarafIT {
     /*
      * Use this to add additional karaf config options, or return an empty array for none
      */
-    public default List<Option> additionalKarafConfig() {
+    default List<Option> additionalKarafConfig() {
         return new ArrayList<>();
     }
 
-    public String testClassName();
-
-    public String testMethodName();
-
-    public static String karafVersion() {
+    static String karafVersion() {
         final ConfigurationManager cm = new ConfigurationManager();
         final String karafVersion = cm.getProperty("pax.exam.karaf.version", "4.0.0");
         return karafVersion;
     }
 
-    public default Option deployFile(String path) {
+    default Option deployFile(String path) {
         try {
             return replaceConfigurationFile("etc/" + new File(path).getName(),
                     new File("target/test-classes", path));
@@ -198,129 +158,4 @@ public interface KarafIT {
         }
     }
 
-    /**
-     * Get a test resource from test-classes
-     *
-     * @param path the resource path relative to {@link #testResources}
-     * @return the resulting WebResource
-     */
-    public default WebResource testResource(String path) {
-        return testResource(path, "text/turtle");
-    }
-
-    /**
-     * Get a test resource from test-classes
-     *
-     * @param path the resource path relative to {@link #testResources}
-     * @return the resulting WebResource
-     */
-    public default WebResource testResource(String path, String contentType) {
-        final File file = new File(testResources, path);
-        try {
-            return WebResource.of(new FileInputStream(file), contentType, URI.create(FilenameUtils.getBaseName(
-                    path)), null);
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public default URI postFromTestResource(final String filePath, final URI intoContainer) throws Exception {
-
-        try (final WebResource object = testResource(filePath);
-                final FcrepoResponse response = client.post(intoContainer)
-                        .body(object.representation(), object.contentType())
-                        .slug(String.format("%s_%s", testMethodName(), getBaseName(filePath)))
-                        .perform()) {
-            return response.getLocation();
-        }
-    }
-
-    public default URI postFromTestResource(final String filePath, final URI intoContainer, final String contentType)
-            throws Exception {
-        return postFromTestResource(filePath, intoContainer, contentType,
-                String.format("%s_%s", testMethodName(), getBaseName(filePath)));
-    }
-
-    public default URI postFromTestResource(final String filePath, final URI intoContainer,
-            final String contentType, final String slug) throws Exception {
-        try (final WebResource object = testResource(filePath, contentType);
-                final FcrepoResponse response = client.post(intoContainer)
-                        .body(object.representation(), object.contentType())
-                        .slug(slug)
-                        .perform()) {
-            return response.getLocation();
-        }
-    }
-
-    public default URI postFromStream(final InputStream in, final URI intoContainer, final String contentType,
-            final String slug) throws Exception {
-        try (final WebResource object = WebResource.of(in, contentType);
-                final FcrepoResponse response = client.post(intoContainer)
-                        .body(object.representation(), object.contentType())
-                        .slug(slug)
-                        .perform()) {
-            return response.getLocation();
-        }
-    }
-
-    public static <T> T attempt(final int times, final Callable<T> it) {
-
-        Throwable caught = null;
-
-        for (int tries = 0; tries < times; tries++) {
-            try {
-                return it.call();
-            } catch (final Throwable e) {
-                caught = e;
-                try {
-                    Thread.sleep(1000);
-                    System.out.println(".");
-                } catch (final InterruptedException i) {
-                    Thread.currentThread().interrupt();
-                    return null;
-                }
-            }
-        }
-        throw new RuntimeException("Failed executing task", caught);
-    }
-
-    /**
-     * Create all necessary containers for registries, etc.
-     * <p>
-     * Tests that need functional registries need to do this <code>@BeforeClass</code>, or deploy alternate
-     * configuration files for jena registry impls.
-     * </p>
-     *
-     * @throws Exception when something goes wrong
-     */
-    public static void createContainers() throws Exception {
-
-        for (final URI container : Arrays.asList(testContainer, objectContainer, extensionContainer,
-                serviceContainer,
-                ontologyContainer)) {
-            // Add the container, if it doesn't exist.
-
-            attempt(60, () -> {
-                try (FcrepoResponse head = client.head(container).perform()) {
-                    return true;
-                } catch (final FcrepoOperationFailedException e) {
-                    if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-                        try (FcrepoResponse response = client.put(container)
-                                .perform()) {
-                            if (response.getStatusCode() != HttpStatus.SC_CREATED && response
-                                    .getStatusCode() != HttpStatus.SC_NO_CONTENT) {
-                                _log.info("Could not create container {}, retrying...", container);
-                                try {
-                                    Thread.sleep(1000);
-                                } catch (final InterruptedException i) {
-                                    Thread.currentThread().interrupt();
-                                }
-                            }
-                        }
-                    }
-                }
-                return true;
-            });
-        }
-    }
 }

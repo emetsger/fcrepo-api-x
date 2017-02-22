@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.fcrepo.apix.integration;
 
 import org.apache.camel.CamelContext;
@@ -31,8 +30,6 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.util.Filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +46,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.fcrepo.apix.integration.BaseIT.attempt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -56,14 +54,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Integration tests relating to streaming content proxied by API-X
- *
- * @author esm
+ * @author apb@jhu.edu
+ * @author Elliot Metsger (emetsger@jhu.edu)
  */
-@RunWith(PaxExam.class)
-public class StreamingIT implements KarafIT {
+public abstract class StreamingBaseIT implements BaseIT {
 
-    private static final Logger LOG = LoggerFactory.getLogger(StreamingIT.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StreamingKarafIT.class);
 
     private static final URI APIX_BASE_URI = URI.create(apixBaseURI);
 
@@ -144,10 +140,10 @@ public class StreamingIT implements KarafIT {
         // Retrieve the checksum calculated by Fedora
         binaryResourceSha = ModelFactory.createDefaultModel()
                 .read(client
-                        .get(appendToPath(binaryResource, "/fcr:metadata"))
-                        .accept("application/rdf+xml")
-                        .perform().getBody(),
-                            null)
+                                .get(appendToPath(binaryResource, "/fcr:metadata"))
+                                .accept("application/rdf+xml")
+                                .perform().getBody(),
+                        null)
                 .listObjectsOfProperty(
                         ResourceFactory
                                 .createProperty("http://www.loc.gov/premis/rdf/v1#", "hasMessageDigest"))
@@ -227,7 +223,7 @@ public class StreamingIT implements KarafIT {
         final String actualDigest;
 
         final URI proxiedResource = proxied(binaryResource);
-        try (FcrepoResponse r = KarafIT.attempt(30, () -> client.get(proxiedResource).perform());
+        try (FcrepoResponse r = attempt(30, () -> client.get(proxiedResource).perform());
              DigestInputStream body = new DigestInputStream(r.getBody(), sha1)) {
             actualSize = drain(body);
             actualDigest = asHex(body.getMessageDigest().digest());

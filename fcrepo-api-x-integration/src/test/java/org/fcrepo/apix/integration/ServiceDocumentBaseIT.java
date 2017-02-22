@@ -15,8 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.fcrepo.apix.integration;
+
+import org.apache.jena.rdf.model.Model;
+import org.fcrepo.apix.model.WebResource;
+import org.fcrepo.apix.model.components.ExtensionRegistry;
+import org.fcrepo.apix.model.components.Registry;
+import org.fcrepo.apix.model.components.RoutingFactory;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+import org.ops4j.pax.exam.util.Filter;
+
+import javax.inject.Inject;
+import java.net.URI;
 
 import static org.fcrepo.apix.jena.Util.parse;
 import static org.fcrepo.apix.model.Ontologies.RDF_TYPE;
@@ -26,29 +38,11 @@ import static org.fcrepo.apix.model.Ontologies.Service.PROP_IS_SERVICE_DOCUMENT_
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.net.URI;
-
-import javax.inject.Inject;
-
-import org.fcrepo.apix.model.WebResource;
-import org.fcrepo.apix.model.components.ExtensionRegistry;
-import org.fcrepo.apix.model.components.Registry;
-
-import org.apache.jena.rdf.model.Model;
-import org.fcrepo.apix.model.components.RoutingFactory;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.junit.PaxExam;
-import org.ops4j.pax.exam.util.Filter;
-
 /**
  * @author apb@jhu.edu
+ * @author Elliot Metsger (emetsger@jhu.edu)
  */
-@RunWith(PaxExam.class)
-public class ServiceDocumentIT implements KarafIT {
+public abstract class ServiceDocumentBaseIT implements BaseIT {
 
     private static final URI REQUEST_URI = URI.create(apixBaseURI);
 
@@ -67,17 +61,12 @@ public class ServiceDocumentIT implements KarafIT {
 
     @Override
     public String testClassName() {
-        return ServiceDocumentIT.class.getSimpleName();
+        return ServiceDocumentKarafIT.class.getSimpleName();
     }
 
     @Override
     public String testMethodName() {
         return name.getMethodName();
-    }
-
-    @BeforeClass
-    public static void init() throws Exception {
-        KarafIT.createContainers();
     }
 
     // Verifies that an object with no services or extensions produces an empty document
@@ -121,4 +110,5 @@ public class ServiceDocumentIT implements KarafIT {
                     doc.getResource("http://example.org/externalService/endpoint")));
         }
     }
+
 }

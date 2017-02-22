@@ -15,46 +15,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.fcrepo.apix.integration;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.jena.rdf.model.Model;
+import org.fcrepo.apix.model.WebResource;
+import org.fcrepo.apix.model.components.OntologyRegistry;
+import org.fcrepo.client.FcrepoResponse;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+
+import javax.inject.Inject;
+import java.net.URI;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.fcrepo.apix.jena.Util.parse;
 import static org.fcrepo.apix.model.Ontologies.RDF_TYPE;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.net.URI;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.inject.Inject;
-
-import org.fcrepo.apix.model.WebResource;
-import org.fcrepo.apix.model.components.OntologyRegistry;
-import org.fcrepo.client.FcrepoResponse;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.jena.rdf.model.Model;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.junit.PaxExam;
-
 /**
- * Verifies that imported ontologies in extensions are persisted, where desired.
- *
  * @author apb@jhu.edu
+ * @author Elliot Metsger (emetsger@jhu.edu)
  */
-@RunWith(PaxExam.class)
-public class OntologyIT extends ServiceBasedTest {
+public abstract class OntologyBaseIT extends AbstractServiceTest {
 
     @Rule
     public TestName name = new TestName();
 
     @Override
     public String testClassName() {
-        return OntologyIT.class.getSimpleName();
+        return OntologyBaseIT.class.getSimpleName();
     }
 
     @Inject
@@ -63,11 +55,6 @@ public class OntologyIT extends ServiceBasedTest {
     @Override
     public String testMethodName() {
         return name.getMethodName();
-    }
-
-    @BeforeClass
-    public static void init() throws Exception {
-        KarafIT.createContainers();
     }
 
     @Test
@@ -102,4 +89,5 @@ public class OntologyIT extends ServiceBasedTest {
             }
         }
     }
+
 }

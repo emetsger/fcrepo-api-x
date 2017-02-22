@@ -15,8 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.fcrepo.apix.integration;
+
+import org.apache.camel.CamelContext;
+import org.apache.camel.Exchange;
+import org.apache.camel.Message;
+import org.apache.camel.RoutesBuilder;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.impl.DefaultMessage;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
+import org.apache.jena.rdf.model.Model;
+import org.fcrepo.apix.model.WebResource;
+import org.fcrepo.apix.model.components.ExtensionRegistry;
+import org.fcrepo.apix.model.components.RoutingFactory;
+import org.fcrepo.apix.model.components.ServiceDiscovery;
+import org.fcrepo.apix.model.components.ServiceRegistry;
+import org.fcrepo.apix.model.components.Updateable;
+import org.fcrepo.client.FcrepoClient;
+import org.fcrepo.client.FcrepoResponse;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+import org.ops4j.pax.exam.util.Filter;
+import org.osgi.framework.BundleContext;
+
+import javax.inject.Inject;
+import java.net.URI;
 
 import static org.fcrepo.apix.jena.Util.parse;
 import static org.fcrepo.apix.jena.Util.query;
@@ -32,53 +58,15 @@ import static org.fcrepo.apix.routing.Util.segment;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import static org.ops4j.pax.exam.CoreOptions.maven;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
-
-import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.inject.Inject;
-
-import org.fcrepo.apix.model.WebResource;
-import org.fcrepo.apix.model.components.ExtensionRegistry;
-import org.fcrepo.apix.model.components.RoutingFactory;
-import org.fcrepo.apix.model.components.ServiceDiscovery;
-import org.fcrepo.apix.model.components.ServiceRegistry;
-import org.fcrepo.apix.model.components.Updateable;
-import org.fcrepo.client.FcrepoClient;
-import org.fcrepo.client.FcrepoResponse;
-
-import org.apache.camel.CamelContext;
-import org.apache.camel.Exchange;
-import org.apache.camel.Message;
-import org.apache.camel.RoutesBuilder;
-import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.impl.DefaultMessage;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpStatus;
-import org.apache.jena.rdf.model.Model;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.junit.PaxExam;
-import org.ops4j.pax.exam.options.MavenArtifactUrlReference;
-import org.ops4j.pax.exam.util.Filter;
-import org.osgi.framework.BundleContext;
 
 /**
  * @author apb@jhu.edu
+ * @author Elliot Metsger (emetsger@jhu.edu)
  */
-@RunWith(PaxExam.class)
-public class ExposedServiceIT implements KarafIT {
+public abstract class ExposedServiceBaseIT implements BaseIT {
 
     final String serviceEndpoint = "http://127.0.0.1:" + System.getProperty("services.dynamic.test.port") +
-            "/ExposedServiceIT";
+            "/ExposedServiceKarafIT";
 
     URI requestURI = URI.create(apixBaseURI);
 
@@ -109,7 +97,7 @@ public class ExposedServiceIT implements KarafIT {
 
     @Override
     public String testClassName() {
-        return ExposedServiceIT.class.getSimpleName();
+        return ExposedServiceKarafIT.class.getSimpleName();
     }
 
     @Rule
@@ -120,27 +108,6 @@ public class ExposedServiceIT implements KarafIT {
         return name.getMethodName();
     }
 
-    @BeforeClass
-    public static void init() throws Exception {
-        KarafIT.createContainers();
-    }
-
-    @Before
-    public void setUp() throws Exception {
-        cxt.addRoutes(createRouteBuilder());
-    }
-
-    // Make camel-test feature available to the pax exam test probe
-    @Override
-    public List<Option> additionalKarafConfig() {
-        final MavenArtifactUrlReference testBundle = maven()
-                .groupId("org.fcrepo.apix")
-                .artifactId("fcrepo-api-x-test")
-                .versionAsInProject();
-        return Arrays.asList(mavenBundle(testBundle));
-        // return Arrays.asList(features(camelRepo, "camel-test"));
-    }
-
     // @Override
     protected RoutesBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
@@ -149,11 +116,16 @@ public class ExposedServiceIT implements KarafIT {
             public void configure() throws Exception {
                 from("jetty:" + serviceEndpoint +
                         "?matchOnUriPrefix=true").process(ex -> {
-                            ex.getOut().copyFrom(responseFromService);
-                            requestToService.copyFrom(ex.getIn());
-                        });
+                    ex.getOut().copyFrom(responseFromService);
+                    requestToService.copyFrom(ex.getIn());
+                });
             }
         };
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        cxt.addRoutes(createRouteBuilder());
     }
 
     @Test

@@ -15,10 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.fcrepo.apix.integration;
 
-import static org.fcrepo.apix.integration.KarafIT.attempt;
+import org.apache.camel.CamelContext;
+import org.apache.commons.io.IOUtils;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.fcrepo.apix.model.Extension;
+import org.fcrepo.apix.model.components.RoutingFactory;
+import org.fcrepo.client.FcrepoResponse;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+import org.ops4j.pax.exam.util.Filter;
+
+import javax.inject.Inject;
+import java.net.URI;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.fcrepo.apix.integration.BaseIT.attempt;
 import static org.fcrepo.apix.model.Ontologies.ORE_AGGREGATES;
 import static org.fcrepo.apix.model.Ontologies.ORE_DESCRIBES;
 import static org.fcrepo.apix.model.Ontologies.RDF_TYPE;
@@ -27,44 +41,12 @@ import static org.fcrepo.apix.model.Ontologies.Service.PROP_IS_SERVICE_DOCUMENT_
 import static org.fcrepo.apix.model.Ontologies.Service.PROP_IS_SERVICE_INSTANCE_OF;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.ops4j.pax.exam.CoreOptions.maven;
-import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.editConfigurationFilePut;
-import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.features;
-
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.inject.Inject;
-
-import org.fcrepo.apix.model.Extension;
-import org.fcrepo.apix.model.Extension.Scope;
-import org.fcrepo.apix.model.components.RoutingFactory;
-import org.fcrepo.client.FcrepoResponse;
-
-import org.apache.camel.CamelContext;
-import org.apache.commons.io.IOUtils;
-import org.apache.jena.query.QueryExecutionFactory;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.junit.PaxExam;
-import org.ops4j.pax.exam.options.MavenUrlReference;
-import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
-import org.ops4j.pax.exam.spi.reactors.PerClass;
-import org.ops4j.pax.exam.util.Filter;
 
 /**
  * @author apb@jhu.edu
+ * @author Elliot Metsger (emetsger@jhu.edu)
  */
-@RunWith(PaxExam.class)
-@ExamReactorStrategy(PerClass.class)
-public class KarafServiceIndexingIT extends ServiceBasedTest {
+public abstract class ServiceIndexingBaseIT extends AbstractServiceTest {
 
     static final String fusekiBaseURI = String.format("http://localhost:%s/fuseki/", System.getProperty(
             "fcrepo.dynamic.test.port", "8080"));
@@ -89,7 +71,7 @@ public class KarafServiceIndexingIT extends ServiceBasedTest {
 
     @Override
     public String testClassName() {
-        return getClass().getSimpleName();
+        return "ServiceIndexingIT";
     }
 
     @Override
@@ -97,35 +79,9 @@ public class KarafServiceIndexingIT extends ServiceBasedTest {
         return name.getMethodName();
     }
 
-    @BeforeClass
-    public static void init() throws Exception {
-        KarafIT.createContainers();
-    }
-
-    @Override
-    public List<Option> additionalKarafConfig() {
-        final MavenUrlReference apixRepo =
-                maven().groupId("org.fcrepo.apix")
-                        .artifactId("fcrepo-api-x-karaf").versionAsInProject()
-                        .classifier("features").type("xml");
-
-        final ArrayList<Option> options = new ArrayList<>(super.additionalKarafConfig());
-
-        options.addAll(Arrays.asList(
-                editConfigurationFilePut("etc/system.properties", "reindexing.dynamic.test.port", System.getProperty(
-                        "reindexing.dynamic.test.port")),
-                deployFile("cfg/org.fcrepo.camel.reindexing.cfg"),
-                deployFile("cfg/org.fcrepo.camel.service.activemq.cfg"),
-                deployFile("cfg/org.fcrepo.camel.service.cfg"),
-                deployFile("cfg/org.fcrepo.apix.indexing.cfg"),
-                features(apixRepo, "fcrepo-api-x-indexing")));
-
-        return options;
-    }
-
     @Test
     public void simpleBindingTest() throws Exception {
-        final Extension extension = newExtension(name).withScope(Scope.RESOURCE).create();
+        final Extension extension = newExtension(name).withScope(Extension.Scope.RESOURCE).create();
 
         final URI object = createObjectMatching(extension);
 
@@ -135,11 +91,12 @@ public class KarafServiceIndexingIT extends ServiceBasedTest {
     @Test
     public void addRemoveExtensionTest() throws Exception {
         // Add an extension and object that binds to it
-        final Extension extension = newExtension(name).withScope(Scope.RESOURCE).withDifferentiator("first").create();
+        final Extension extension = newExtension(name).withScope(Extension.Scope.RESOURCE)
+                .withDifferentiator("first").create();
         final URI object = createObjectMatching(extension);
 
         // Now add another extension that binds to our object
-        final Extension extension2 = newExtension(name).withScope(Scope.RESOURCE).withDifferentiator("second")
+        final Extension extension2 = newExtension(name).withScope(Extension.Scope.RESOURCE).withDifferentiator("second")
                 .bindsTo(extension.bindingClass())
                 .create();
 
@@ -159,7 +116,7 @@ public class KarafServiceIndexingIT extends ServiceBasedTest {
 
     @Test
     public void bindObjectTest() throws Exception {
-        final Extension extension = newExtension(name).withScope(Scope.RESOURCE).create();
+        final Extension extension = newExtension(name).withScope(Extension.Scope.RESOURCE).create();
 
         // Just post an empty object
         final URI object = client.post(routing.of(requestURI).interceptUriFor(objectContainer)).perform().getUrl();
@@ -209,7 +166,7 @@ public class KarafServiceIndexingIT extends ServiceBasedTest {
         query.append(String.format("?instance <%s> <%s>.\n", PROP_IS_SERVICE_INSTANCE_OF, extension.exposed()
                 .exposedService()));
 
-        if (extension.exposed().scope().equals(Scope.RESOURCE)) {
+        if (extension.exposed().scope().equals(Extension.Scope.RESOURCE)) {
             query.append(String.format("?instance <%s> <%s>.\n", PROP_IS_FUNCTION_OF, object));
         }
 

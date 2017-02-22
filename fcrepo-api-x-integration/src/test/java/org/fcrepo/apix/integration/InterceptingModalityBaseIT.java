@@ -15,8 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.fcrepo.apix.integration;
+
+import org.apache.camel.Exchange;
+import org.apache.commons.io.IOUtils;
+import org.fcrepo.apix.model.components.RoutingFactory;
+import org.fcrepo.client.FcrepoClient;
+import org.fcrepo.client.FcrepoOperationFailedException;
+import org.fcrepo.client.FcrepoResponse;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+
+import javax.inject.Inject;
+import java.net.URI;
 
 import static org.fcrepo.apix.routing.impl.GenericInterceptExecution.HTTP_HEADER_MODALITY;
 import static org.fcrepo.apix.routing.impl.GenericInterceptExecution.MODALITY_INTERCEPT_INCOMING;
@@ -25,29 +37,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.net.URI;
-
-import javax.inject.Inject;
-
-import org.fcrepo.apix.model.components.RoutingFactory;
-import org.fcrepo.client.FcrepoClient;
-import org.fcrepo.client.FcrepoOperationFailedException;
-import org.fcrepo.client.FcrepoResponse;
-
-import org.apache.camel.Exchange;
-import org.apache.commons.io.IOUtils;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.junit.PaxExam;
-
 /**
  * @author apb@jhu.edu
+ * @author Elliot Metsger (emetsger@jhu.edu)
  */
-@RunWith(PaxExam.class)
-public class InterceptingModalityIT extends ServiceBasedTest implements KarafIT {
+public abstract class InterceptingModalityBaseIT extends AbstractServiceTest {
 
     final String TEST_OBJECT_TYPE = "test:InterceptingModalityIT#object";
 
@@ -61,17 +55,12 @@ public class InterceptingModalityIT extends ServiceBasedTest implements KarafIT 
 
     @Override
     public String testClassName() {
-        return InterceptingModalityIT.class.getSimpleName();
+        return InterceptingModalityBaseIT.class.getSimpleName();
     }
 
     @Override
     public String testMethodName() {
         return name.getMethodName();
-    }
-
-    @BeforeClass
-    public static void init() throws Exception {
-        KarafIT.createContainers();
     }
 
     // Verify that a 'link' header pointing to the service document is present
