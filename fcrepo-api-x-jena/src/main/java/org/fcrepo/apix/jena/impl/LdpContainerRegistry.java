@@ -53,6 +53,9 @@ import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 /**
  * Uses a single LDP container as a registry.
  * <p>
@@ -64,6 +67,7 @@ import org.slf4j.LoggerFactory;
  * @author apb@jhu.edu
  */
 @Component(configurationPolicy = ConfigurationPolicy.REQUIRE)
+@Named
 public class LdpContainerRegistry implements Registry {
 
     private Registry delegate;
@@ -90,6 +94,7 @@ public class LdpContainerRegistry implements Registry {
      * @param registry the registry.
      */
     @Reference
+    @Inject
     public void setRegistryDelegate(final Registry registry) {
         this.delegate = registry;
     }
@@ -100,6 +105,7 @@ public class LdpContainerRegistry implements Registry {
      * @param client the client.
      */
     @Reference
+    @Inject
     public void setHttpClient(final CloseableHttpClient client) {
 
         this.client = client;
@@ -111,6 +117,7 @@ public class LdpContainerRegistry implements Registry {
      * @param initializer the initializer
      */
     @Reference
+    @Inject
     public void setInitializer(final Initializer initializer) {
         this.initializer = initializer;
     }

@@ -45,12 +45,16 @@ import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 /**
  * Uses Jena to parse and provide reasoning over ontologies.
  *
  * @author apb@jhu.edu
  */
 @Component(configurationPolicy = ConfigurationPolicy.REQUIRE)
+@Named
 public class JenaOntologyService implements OntologyService {
 
     private OntologyRegistry registry;
@@ -86,6 +90,7 @@ public class JenaOntologyService implements OntologyService {
      * @param registry The underlying ontology registry.
      */
     @Reference
+    @Inject
     public void setRegistryDelegate(final OntologyRegistry registry) {
         this.registry = registry;
     }

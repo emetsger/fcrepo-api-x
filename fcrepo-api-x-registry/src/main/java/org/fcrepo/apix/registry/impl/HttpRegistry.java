@@ -20,6 +20,7 @@ package org.fcrepo.apix.registry.impl;
 
 import static org.apache.http.HttpHeaders.ACCEPT;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpHeaders.VIA;
 import static org.apache.http.HttpStatus.SC_GONE;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
@@ -50,12 +51,17 @@ import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+
 /**
  * Simple HTTP-based registry that performs GET for lookups on a given URI.
  *
  * @author apb@jhu.edu
  */
 @Component(configurationPolicy = REQUIRE)
+@Named()
 public class HttpRegistry implements Registry {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpRegistry.class);

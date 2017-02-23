@@ -41,6 +41,8 @@ import org.fcrepo.apix.model.components.Updateable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+
 /**
  * Analyzes service URIs.
  * <p>
@@ -72,6 +74,7 @@ public class ExposedServiceUriAnalyzer implements Updateable {
      *
      * @param registry The extension registry.
      */
+    @Inject
     public void setExtensionRegistry(final ExtensionRegistry registry) {
         this.extensions = registry;
     }
@@ -99,6 +102,7 @@ public class ExposedServiceUriAnalyzer implements Updateable {
      *
      * @param routing The routing component
      */
+    @Inject
     public void setRouting(final RoutingFactory routing) {
         this.routing = routing;
     }
@@ -108,6 +112,7 @@ public class ExposedServiceUriAnalyzer implements Updateable {
      *
      * @param initializer the initializer.
      */
+    @Inject
     public void setInitializer(final Initializer initializer) {
         this.initializer = initializer;
     }

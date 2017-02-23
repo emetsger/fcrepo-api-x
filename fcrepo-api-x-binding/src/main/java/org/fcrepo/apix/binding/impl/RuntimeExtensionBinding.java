@@ -46,6 +46,9 @@ import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 /**
  * Simple extension binding based on runtime lookup and reasoning.
  * <p>
@@ -56,6 +59,7 @@ import org.slf4j.LoggerFactory;
  * @author apb@jhu.edu
  */
 @Component(configurationPolicy = ConfigurationPolicy.REQUIRE)
+@Named
 public class RuntimeExtensionBinding implements ExtensionBinding {
 
     private static final URI NON_RDF_SOURCE = URI.create("http://www.w3.org/ns/ldp#NonRDFSource");
@@ -77,6 +81,7 @@ public class RuntimeExtensionBinding implements ExtensionBinding {
      * @param exr Extension registry instance.
      */
     @Reference
+    @Inject
     public void setExtensionRegistry(final ExtensionRegistry exr) {
         extensionRegistry = exr;
     }
@@ -87,6 +92,7 @@ public class RuntimeExtensionBinding implements ExtensionBinding {
      * @param os Ontology service instance.
      */
     @Reference
+    @Inject
     public void setOntologyService(final OntologyService os) {
         ontologySvc = os;
     }
@@ -100,6 +106,7 @@ public class RuntimeExtensionBinding implements ExtensionBinding {
      * @param registry Registry impl.
      */
     @Reference(target = "(org.fcrepo.apix.registry.role=default)")
+    @Inject
     public void setDelegateRegistry(final Registry registry) {
         this.registry = registry;
     }

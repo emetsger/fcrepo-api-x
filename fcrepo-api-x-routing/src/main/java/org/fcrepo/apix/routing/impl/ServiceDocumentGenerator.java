@@ -59,12 +59,16 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 /**
  * Generates service documents for resources.
  *
  * @author apb@jhu.edu
  */
 @Component(configurationPolicy = ConfigurationPolicy.REQUIRE)
+@Named
 public class ServiceDocumentGenerator implements ServiceDiscovery {
 
     private ExtensionBinding extensionBinding;
@@ -79,6 +83,7 @@ public class ServiceDocumentGenerator implements ServiceDiscovery {
      * @param binding extension binding impl
      */
     @Reference
+    @Inject
     public void setExtensionBinding(final ExtensionBinding binding) {
         this.extensionBinding = binding;
     }

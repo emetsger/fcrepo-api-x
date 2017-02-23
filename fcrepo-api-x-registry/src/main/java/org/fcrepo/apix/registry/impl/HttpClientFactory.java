@@ -21,6 +21,10 @@ package org.fcrepo.apix.registry.impl;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import javax.inject.Named;
 
 /**
  * Creates configured instances of HttpClients.
@@ -33,6 +37,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
  *
  * @author apb@jhu.edu
  */
+@Named
+@Configuration
 public class HttpClientFactory {
 
     private int connectTimeout = 1000;
@@ -62,6 +68,7 @@ public class HttpClientFactory {
      *
      * @return HttpClient impl.
      */
+    @Bean
     public CloseableHttpClient getClient() {
         final RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(connectTimeout)

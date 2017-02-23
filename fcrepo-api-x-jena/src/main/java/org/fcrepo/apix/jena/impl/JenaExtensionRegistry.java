@@ -44,6 +44,9 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 /**
  * Wraps a delegate registry and parses extensions using Jena.
  * <p>
@@ -53,6 +56,7 @@ import org.osgi.service.component.annotations.Reference;
  * @author apb@jhu.edu
  */
 @Component(service = ExtensionRegistry.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
+@Named
 public class JenaExtensionRegistry extends WrappingRegistry implements ExtensionRegistry {
 
     /**
@@ -62,6 +66,7 @@ public class JenaExtensionRegistry extends WrappingRegistry implements Extension
      */
     @Override
     @Reference // (target = "org.fcrepo.apix.registry.contains=org.fcrepo.apix.model.Extension")
+    @Inject
     public void setRegistryDelegate(final Registry reg) {
         super.setRegistryDelegate(reg);
     }

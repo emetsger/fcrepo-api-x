@@ -34,6 +34,7 @@
     <junit.version>4.12</junit.version>
     <karaf.version>4.0.7</karaf.version>
     <license.plugin.version>2.11</license.plugin.version>
+    <logback.version>1.1.10</logback.version>
     <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
     <maven-bundle-plugin.version>3.2.0</maven-bundle-plugin.version>
     <maven-exec-plugin.version>1.4.0</maven-exec-plugin.version>
@@ -44,6 +45,8 @@
     <pax-exam.version>4.9.2</pax-exam.version>
     <pax-url-aether.version>2.5.1</pax-url-aether.version>
     <slf4j.version>1.7.13</slf4j.version>
+    <spring.version>5.0.0.BUILD-SNAPSHOT</spring.version>
+    <spring.boot.version>2.0.0.BUILD-SNAPSHOT</spring.boot.version>
   </properties>
 
   <build>
@@ -174,7 +177,19 @@
 
   <dependencyManagement>
     <dependencies>
-
+      <dependency>
+        <!-- Import dependency management from Spring Boot -->
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring.boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>${logback.version}</version>
+      </dependency>
       <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
@@ -305,6 +320,7 @@
     <module>fcrepo-api-x-listener</module>
     <module>fcrepo-api-x-loader</module>
     <module>fcrepo-api-x-indexing</module>
+    <module>fcrepo-api-x-springboot</module>
   </modules>
 
   <licenses>
@@ -344,7 +360,27 @@
         <enabled>true</enabled>
       </snapshots>
     </repository>
+    <repository>
+      <id>spring-snapshots</id>
+      <url>http://repo.spring.io/snapshot</url>
+      <snapshots><enabled>true</enabled></snapshots>
+    </repository>
+    <repository>
+      <id>spring-milestones</id>
+      <url>http://repo.spring.io/milestone</url>
+    </repository>
   </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>spring-snapshots</id>
+      <url>http://repo.spring.io/snapshot</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>spring-milestones</id>
+      <url>http://repo.spring.io/milestone</url>
+    </pluginRepository>
+  </pluginRepositories>
 
   <profiles>
     <profile>
@@ -354,6 +390,23 @@
         <module>proof-of-concept/go-proxy</module>
         <module>proof-of-concept/indexing-triplestore</module>
       </modules>
+    </profile>
+    <profile>
+      <id>spring-boot</id>
+      <dependencyManagement>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>${httpcore.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>${httpclient.version}</version>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
     </profile>
   </profiles>
 </project>

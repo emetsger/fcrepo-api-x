@@ -56,6 +56,8 @@ import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+
 /**
  * Stub/placeholder Routing implementation that does nothing.
  *
@@ -115,6 +117,7 @@ public class RoutingImpl extends RouteBuilder {
      *
      * @param disc service document generator.
      */
+    @Inject
     public void setServiceDiscovery(final ServiceDiscovery disc) {
         this.serviceDiscovery = disc;
     }
@@ -124,6 +127,7 @@ public class RoutingImpl extends RouteBuilder {
      *
      * @param registry The registry.
      */
+    @Inject
     public void setServiceRegistry(final ServiceRegistry registry) {
         this.serviceRegistry = registry;
     }
@@ -133,6 +137,7 @@ public class RoutingImpl extends RouteBuilder {
      *
      * @param analyzer Analyzer impl.
      */
+    @Inject
     public void setExposedServiceURIAnalyzer(final ExposedServiceUriAnalyzer analyzer) {
         this.analyzer = analyzer;
     }
@@ -142,6 +147,7 @@ public class RoutingImpl extends RouteBuilder {
      *
      * @param routing routing.
      */
+    @Inject
     public void setRouting(final RoutingFactory routing) {
         this.routing = routing;
     }
