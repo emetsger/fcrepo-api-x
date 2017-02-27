@@ -106,7 +106,7 @@ public class RuntimeExtensionBinding implements ExtensionBinding {
      * @param registry Registry impl.
      */
     @Reference(target = "(org.fcrepo.apix.registry.role=default)")
-    @Inject
+    @Inject @Named("httpRegistry")
     public void setDelegateRegistry(final Registry registry) {
         this.registry = registry;
     }

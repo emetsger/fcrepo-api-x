@@ -31,11 +31,14 @@ import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Named;
+
 /**
  * Persists ontologies if not present in a registry.
  *
  * @author apb@jhu.edu
  */
+@Named("persistingOntologyRegistry")
 public class PersistingOntologyRegistry extends WrappingRegistry implements OntologyRegistry, Updateable {
 
     static final Logger LOG = LoggerFactory.getLogger(PersistingOntologyRegistry.class);

@@ -66,7 +66,7 @@ public class JenaExtensionRegistry extends WrappingRegistry implements Extension
      */
     @Override
     @Reference // (target = "org.fcrepo.apix.registry.contains=org.fcrepo.apix.model.Extension")
-    @Inject
+    @Inject @Named("ldpContainerRegistry")
     public void setRegistryDelegate(final Registry reg) {
         super.setRegistryDelegate(reg);
     }

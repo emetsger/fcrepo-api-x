@@ -61,7 +61,7 @@ import javax.inject.Provider;
  * @author apb@jhu.edu
  */
 @Component(configurationPolicy = REQUIRE)
-@Named()
+@Named("httpRegistry")
 public class HttpRegistry implements Registry {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpRegistry.class);

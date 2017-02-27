@@ -44,6 +44,13 @@
       <version>${spring.boot.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>xml-apis</groupId>
+      <artifactId>xml-apis</artifactId>
+      <version>${xml-apis.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
     <!-- TODO: apix bom? -->
     <dependency>
       <groupId>org.fcrepo.apix</groupId>
@@ -75,12 +82,12 @@
       <version>${project.parent.version}</version>
       <scope>test</scope>
     </dependency>
-    <!--<dependency>-->
-      <!--<groupId>org.fcrepo.apix</groupId>-->
-      <!--<artifactId>fcrepo-api-x-jena</artifactId>-->
-      <!--<version>${project.parent.version}</version>-->
-      <!--<scope>runtime</scope>-->
-    <!--</dependency>-->
+    <dependency>
+      <groupId>org.fcrepo.apix</groupId>
+      <artifactId>fcrepo-api-x-jena</artifactId>
+      <version>${project.parent.version}</version>
+      <scope>runtime</scope>
+    </dependency>
     <dependency>
       <groupId>org.fcrepo.apix</groupId>
       <artifactId>fcrepo-api-x-listener</artifactId>

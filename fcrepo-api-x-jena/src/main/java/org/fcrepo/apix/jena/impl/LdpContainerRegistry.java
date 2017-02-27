@@ -67,7 +67,7 @@ import javax.inject.Named;
  * @author apb@jhu.edu
  */
 @Component(configurationPolicy = ConfigurationPolicy.REQUIRE)
-@Named
+@Named("ldpContainerRegistry")
 public class LdpContainerRegistry implements Registry {
 
     private Registry delegate;
@@ -94,7 +94,7 @@ public class LdpContainerRegistry implements Registry {
      * @param registry the registry.
      */
     @Reference
-    @Inject
+    @Inject @Named("httpRegistry")
     public void setRegistryDelegate(final Registry registry) {
         this.delegate = registry;
     }

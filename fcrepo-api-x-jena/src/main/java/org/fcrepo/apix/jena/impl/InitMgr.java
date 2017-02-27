@@ -27,6 +27,8 @@ import java.util.concurrent.TimeoutException;
 
 import org.fcrepo.apix.model.components.Initializer;
 
+import javax.inject.Named;
+
 /**
  * Simple threaded initialization initializer.
  * <p>
@@ -36,6 +38,7 @@ import org.fcrepo.apix.model.components.Initializer;
  *
  * @author apb@jhu.edu
  */
+@Named
 public class InitMgr implements Initializer {
 
     long retryWait = 1000;

@@ -90,7 +90,7 @@ public class JenaOntologyService implements OntologyService {
      * @param registry The underlying ontology registry.
      */
     @Reference
-    @Inject
+    @Inject @Named("persistingOntologyRegistry")
     public void setRegistryDelegate(final OntologyRegistry registry) {
         this.registry = registry;
     }

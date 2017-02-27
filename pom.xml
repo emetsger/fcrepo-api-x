@@ -398,6 +398,9 @@
         <!-- spring-boot-dependencies value is '9.4.1.v20170120' -->
         <!-- original value is '9.2.19.v20160908', comes from ?? -->
         <jetty.version>9.2.19.v20160908</jetty.version>
+
+        <!-- needed on the jena runtime classpath to parse jena-properties.xml (ElementTraversal) -->
+        <xml-apis.version>1.4.01</xml-apis.version>
       </properties>
 
       <dependencyManagement>
