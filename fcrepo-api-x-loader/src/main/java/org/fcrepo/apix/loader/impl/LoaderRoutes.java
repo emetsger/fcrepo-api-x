@@ -31,6 +31,8 @@ import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.fcrepo.apix.model.components.RoutingFactory;
 
+import javax.inject.Named;
+
 /**
  * Routes which provide an HTTP api to the extension loader.
  *
@@ -61,6 +63,7 @@ public class LoaderRoutes extends RouteBuilder {
      *
      * @param svc The service
      */
+    @Named
     public void setLoaderService(final LoaderService svc) {
         this.loaderService = svc;
     }
@@ -79,6 +82,7 @@ public class LoaderRoutes extends RouteBuilder {
      *
      * @param routing Routing component.
      */
+    @Named
     public void setRouting(final RoutingFactory routing) {
         this.routing = routing;
     }

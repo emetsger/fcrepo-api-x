@@ -54,11 +54,14 @@ import org.apache.jena.rdf.model.Model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Named;
+
 /**
  * Service which loads extensions and services based on the contents of the given resource.
  *
  * @author apb@jhu.edu
  */
+@Named
 public class LoaderService {
 
     private ServiceRegistry serviceRegistry;
@@ -74,6 +77,7 @@ public class LoaderService {
      *
      * @param registry The registry
      */
+    @Named
     public void setServiceRegistry(final ServiceRegistry registry) {
         this.serviceRegistry = registry;
     }
@@ -83,6 +87,7 @@ public class LoaderService {
      *
      * @param registry the registry.
      */
+    @Named
     public void setExtensionRegistry(final ExtensionRegistry registry) {
         this.extensionRegistry = registry;
     }
@@ -92,6 +97,7 @@ public class LoaderService {
      *
      * @param registry the registry.
      */
+    @Named("httpRegistry")
     public void setGeneralRegistry(final Registry registry) {
         this.generalRegistry = registry;
     }
