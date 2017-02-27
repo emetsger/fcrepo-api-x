@@ -35,6 +35,8 @@ import org.apache.camel.builder.RouteBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+
 /**
  * Listens for updates to repository resources and notifies {@link Updateable}s
  *
@@ -64,6 +66,7 @@ public class UpdateListener extends RouteBuilder {
      *
      * @param routing Routing impl.
      */
+    @Inject
     public void setRouting(final RoutingFactory routing) {
         this.routing = routing;
     }

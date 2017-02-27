@@ -18,11 +18,13 @@
 
 package org.fcrepo.apix.routing.impl;
 
+import javax.inject.Named;
 import java.net.URI;
 
 /**
  * @author apb@jhu.edu
  */
+@Named
 public class RoutingStub extends RoutingPrototype {
 
     private String scheme;
