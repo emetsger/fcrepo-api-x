@@ -50,6 +50,9 @@ import org.apache.jena.riot.RDFDataMgr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 /**
  * Listens for updates to Fedora objects and indexes service docs.
  * <p>
@@ -59,6 +62,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author apb@jhu.edu
  */
+@Named
 public class ServiceIndexingRoutes extends RouteBuilder {
 
     static final String ROUTE_TRIGGER_REINDEX = "direct:trigger-reindex";
@@ -94,6 +98,7 @@ public class ServiceIndexingRoutes extends RouteBuilder {
      *
      * @param path
      */
+    @Inject
     public void setExtensionContainer(final String path) {
         this.extensionContainer = path;
     }
@@ -103,6 +108,7 @@ public class ServiceIndexingRoutes extends RouteBuilder {
      *
      * @param stream
      */
+    @Inject
     public void setReindexStream(final String stream) {
         this.reindexStream = stream;
     }
