@@ -69,7 +69,6 @@ import javax.inject.Named;
  * @author apb@jhu.edu
  */
 @Component(configurationPolicy = ConfigurationPolicy.REQUIRE)
-@Named
 public class LdpContainerRegistry implements Registry {
 
     private Registry delegate;
