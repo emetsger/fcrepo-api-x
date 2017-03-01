@@ -54,6 +54,7 @@ import org.apache.jena.rdf.model.Model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
@@ -77,7 +78,7 @@ public class LoaderService {
      *
      * @param registry The registry
      */
-    @Named
+    @Inject
     public void setServiceRegistry(final ServiceRegistry registry) {
         this.serviceRegistry = registry;
     }
@@ -87,7 +88,7 @@ public class LoaderService {
      *
      * @param registry the registry.
      */
-    @Named
+    @Inject
     public void setExtensionRegistry(final ExtensionRegistry registry) {
         this.extensionRegistry = registry;
     }
@@ -97,7 +98,7 @@ public class LoaderService {
      *
      * @param registry the registry.
      */
-    @Named("httpRegistry")
+    @Inject @Named("httpRegistry")
     public void setGeneralRegistry(final Registry registry) {
         this.generalRegistry = registry;
     }
