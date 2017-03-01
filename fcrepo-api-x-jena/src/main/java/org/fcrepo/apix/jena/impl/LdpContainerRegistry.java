@@ -53,6 +53,8 @@ import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -67,7 +69,7 @@ import javax.inject.Named;
  * @author apb@jhu.edu
  */
 @Component(configurationPolicy = ConfigurationPolicy.REQUIRE)
-@Named("ldpContainerRegistry")
+@Named
 public class LdpContainerRegistry implements Registry {
 
     private Registry delegate;
@@ -123,6 +125,7 @@ public class LdpContainerRegistry implements Registry {
     }
 
     /** Cancel the container creation, if it's running. */
+    @PreDestroy
     public void shutdown() {
         init.cancel();
     }
@@ -130,6 +133,7 @@ public class LdpContainerRegistry implements Registry {
     /**
      * Create the container if it doesn't exist.
      */
+    @PostConstruct
     public void init() {
 
         init = initializer.initialize(() -> {
