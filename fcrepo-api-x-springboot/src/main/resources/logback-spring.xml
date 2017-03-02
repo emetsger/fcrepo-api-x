@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+      <charset>utf8</charset>
+    </encoder>
+  </appender>
+
+  <root level="WARN">
+    <appender-ref ref="CONSOLE"/>
+  </root>
+
+  <logger name="org.springframework" level="DEBUG">
+    <appender-ref ref="CONSOLE"/>
+  </logger>
+
+  <logger name="org.fcrepo.apix" level="INFO">
+    <appender-ref ref="CONSOLE"/>
+  </logger>
+
+</configuration>
